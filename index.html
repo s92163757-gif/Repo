@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atlas AI</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#121a2c;--line:#26334b;--text:#edf2ff;--muted:#9aa9c2;--accent:#7c83ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#172344 0,#0b1020 55%);color:var(--text);font:16px system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+main{max-width:900px;margin:auto;padding:22px 16px;display:flex;flex-direction:column;min-height:100vh}
+header{display:flex;align-items:center;gap:12px;padding:12px 2px 20px;border-bottom:1px solid var(--line)}
+.logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#7c83ff,#27c6a5);display:grid;place-items:center;font-size:23px}
+h1{font-size:21px;margin:0}header p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.settings{margin:16px 0;padding:14px;background:#111a2b;border:1px solid var(--line);border-radius:16px}
+.settings summary{cursor:pointer;font-weight:600}.settings p{color:var(--muted);font-size:13px;line-height:1.5}
+input,textarea{width:100%;background:#0b1222;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:12px;font:inherit}
+label{display:block;color:var(--muted);font-size:13px;margin:12px 0 6px}
+.chat{flex:1;min-height:300px;padding:12px 0;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:88%;padding:13px 15px;border-radius:16px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.user{align-self:flex-end;background:#333b78}.bot{align-self:flex-start;background:var(--panel);border:1px solid var(--line)}
+.composer{position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 18%);padding:16px 0 8px}
+form{display:flex;gap:9px}textarea{resize:vertical;min-height:54px;max-height:180px}
+button{border:0;border-radius:12px;padding:0 20px;background:var(--accent);color:white;font-weight:700;font-size:15px;cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}.hint{font-size:12px;color:var(--muted);text-align:center;margin:9px}
+.status{font-size:12px;color:var(--muted);margin-top:8px}
+</style>
+</head>
+<body><main>
+<header><div class="logo">✦</div><div><h1>Atlas</h1><p>General-purpose AI agent · Gemini edition</p></div></header>
+<details class="settings" open><summary>AI connection settings</summary>
+<p>Paste your Google AI Studio API key here. It is kept only in this page's memory and is not saved in the Space files. Do not share it or add it to public source code.</p>
+<label for="key">Google Gemini API key</label><input id="key" type="password" placeholder="Paste your API key" autocomplete="off">
+<label for="model">Gemini model</label><input id="model" value="gemini-2.5-flash">
+<p>Free-tier availability and rate limits depend on Google's current plan, region, and model availability.</p></details>
+<section class="chat" id="chat" aria-live="polite"><div class="msg bot">Hello! I'm Atlas. Your Gemini connection is ready to configure. Paste your Google AI Studio API key above, then send a message.</div></section>
+<div class="composer"><form id="form"><textarea id="prompt" placeholder="Message Atlas…" rows="1" required></textarea><button id="send" type="submit">Send</button></form><div class="status" id="status">Not connected · Add your Gemini API key above</div><div class="hint">Never paste passwords or sensitive personal information.</div></div>
+</main>
+<script>
+const $=id=>document.getElementById(id),chat=$('chat');
+const history=[];
+function bubble(text,who){const d=document.createElement('div');d.className='msg '+who;d.textContent=text;chat.appendChild(d);d.scrollIntoView({behavior:'smooth',block:'end'});return d}
+$('form').addEventListener('submit',async e=>{
+ e.preventDefault();const text=$('prompt').value.trim();if(!text)return;
+ const key=$('key').value.trim(),model=$('model').value.trim();
+ if(!key){$('status').textContent='Add your Google Gemini API key above.';return}
+ if(!model){$('status').textContent='Enter a Gemini model name.';return}
+ $('prompt').value='';bubble(text,'user');history.push({role:'user',parts:[{text}]});
+ $('send').disabled=true;$('status').textContent='Atlas is thinking…';const loading=bubble('Thinking…','bot');
+ try{
+  const contents=history.map(m=>({role:m.role,parts:m.parts}));
+  const url='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent?key='+encodeURIComponent(key);
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents,generationConfig:{temperature:0.7,maxOutputTokens:1200}})});
+  const data=await r.json();
+  if(!r.ok)throw new Error(data.error?.message||('HTTP '+r.status));
+  const answer=(data.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim()||'The model returned no text. Try another Gemini model.';
+  loading.textContent=answer;history.push({role:'model',parts:[{text:answer}]});
+  while(history.length>20)history.splice(0,2);
+  $('status').textContent='Connected · '+model;
+ }catch(err){loading.textContent='Could not get a response: '+err.message;$('status').textContent='Connection error · Check the API key, model name, and quota.';history.pop()}
+ finally{$('send').disabled=false;$('prompt').focus()}
+});
+</script></body></html>
