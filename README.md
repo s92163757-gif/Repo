@@ -1,20 +1,23 @@
 ---
-title: Atlas AI Agent
-emoji: ✦
+title: Atlas AI
+emoji: 🤖
 colorFrom: indigo
 colorTo: blue
 sdk: static
 pinned: false
 ---
 
-# Atlas AI Agent
+# Atlas AI — Gemini edition
 
-A lightweight static chat interface for Hugging Face Inference Providers.
+A lightweight static chat interface that connects to the Google Gemini API.
 
-## Publish
-Upload `index.html` to the root of your Hugging Face Static Space repository.
+## Setup
+1. Open the Space's **Files** tab.
+2. Upload this `index.html` to the repository root, replacing the old one.
+3. Commit the change and open the **App** tab.
+4. Expand **AI connection settings** and paste your Google AI Studio API key.
+5. Send a test message.
 
-## Connect
-Open **AI connection settings** in the app and paste your own Hugging Face access token. The page keeps it in memory only and does not write it into the repository. Never share the token or put it in source code.
+The key is entered in the browser and is not stored in the repository or local storage. This is suitable for personal testing, but a browser-based app cannot fully protect an API key from the device/browser or network inspection. Do not share the Space if you use a personal key. For a public multi-user app, put the key on a private backend instead.
 
-The app calls `https://router.huggingface.co/v1/chat/completions`. Model availability, provider access, and any usage charges depend on your Hugging Face account and selected model. Static hosting is free; inference is a separate service and may not be free.
+The default model is `gemini-2.5-flash`. Free-tier eligibility, model availability, and rate limits depend on Google's current terms and account settings. API usage may incur charges if billing is enabled or free limits are exceeded.
